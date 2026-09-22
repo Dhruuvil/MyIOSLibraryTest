@@ -29,3 +29,4 @@ gradlew
 gradlew
 local
 settings.gradle
+.gradle/
