@@ -2,4 +2,4 @@ jdk:
   - openjdk17
 
 install:
-  - cd "moby rewards" && ./gradlew clean build publishToMavenLocal -x test
+  - ./gradlew clean build publishToMavenLocal -x test
