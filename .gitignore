@@ -15,3 +15,17 @@ local.properties
 # OS files
 .DS_Store
 Thumbs.db
+
+
+# Maven
+target/
+dist/
+app/
+build/
+gradle/
+build.gradle
+gradle
+gradlew
+gradlew
+local
+settings.gradle
