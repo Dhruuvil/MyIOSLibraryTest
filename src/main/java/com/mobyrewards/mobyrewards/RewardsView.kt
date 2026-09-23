@@ -20,6 +20,7 @@ import org.json.JSONObject
 import kotlin.math.abs
 import java.net.HttpURLConnection
 import java.net.URL
+import android.util.Log
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
@@ -43,6 +44,7 @@ class RewardsView(
 
     private var showActive = false
     private var isLoading = true
+    private var errorMessage = ""
 
     // =========================================================
     // API CONFIG
@@ -287,6 +289,12 @@ class RewardsView(
             deviceId = libraryDeviceId,
 
             onSuccess = { response ->
+                sectionText.visibility = View.VISIBLE
+
+                pager.layoutParams =
+                    (pager.layoutParams as LinearLayout.LayoutParams).apply {
+                        topMargin = dp(theme.pagerTopMargin)
+                    }
 
                 android.util.Log.d(
                     "MOBY_UPCOMING_API",
@@ -305,12 +313,21 @@ class RewardsView(
             },
             onError = { error ->
 
-                android.util.Log.e(
+                Log.e(
                     "MOBY_UPCOMING_API",
                     "Upcoming API Error: $error"
                 )
 
+                errorMessage = error
                 isLoading = false
+
+                sectionText.visibility = View.GONE
+
+                pager.layoutParams =
+                    (pager.layoutParams as LinearLayout.LayoutParams).apply {
+                        topMargin = 0
+                    }
+
                 adapter.notifyDataSetChanged()
             }
         )
@@ -520,6 +537,12 @@ class RewardsView(
             deviceId = libraryDeviceId,
 
             onSuccess = { response ->
+                sectionText.visibility = View.VISIBLE
+
+                pager.layoutParams =
+                    (pager.layoutParams as LinearLayout.LayoutParams).apply {
+                        topMargin = dp(theme.pagerTopMargin)
+                    }
 
                 android.util.Log.d(
                     "MOBY_ACTIVE_API",
@@ -541,12 +564,16 @@ class RewardsView(
 
             onError = { error ->
 
-                android.util.Log.e(
-                    "MOBY_ACTIVE_API",
-                    "ACTIVE ERROR = $error"
-                )
-
+                errorMessage = error
                 isLoading = false
+
+                sectionText.visibility = View.GONE
+
+                pager.layoutParams =
+                    (pager.layoutParams as LinearLayout.LayoutParams).apply {
+                        topMargin = 0
+                    }
+
                 adapter.notifyDataSetChanged()
             }
         )
@@ -862,9 +889,13 @@ class RewardsView(
             holder: Holder,
             position: Int
         ) {
-
             if (isLoading) {
                 holder.showSkeleton()
+                return
+            }
+
+            if (errorMessage.isNotBlank()) {
+                holder.showError(errorMessage)
                 return
             }
 
@@ -879,8 +910,7 @@ class RewardsView(
         }
 
         override fun getItemCount(): Int {
-
-            return if (isLoading) {
+            return if (isLoading || errorMessage.isNotBlank()) {
                 1
             } else {
                 visibleRewards().size
@@ -890,6 +920,64 @@ class RewardsView(
         inner class Holder(
             private val root: LinearLayout
         ) : RecyclerView.ViewHolder(root) {
+
+            fun showError(message: String) {
+
+                root.removeAllViews()
+
+                val errorText = TextView(context).apply {
+
+                    text = message
+
+                    // Same font family as library theme
+                    typeface = theme.typeface
+
+                    // Error font size
+                    textSize = theme.bodyTextSize
+
+                    // Error red color
+                    setTextColor(theme.errorTextColor)
+
+                    gravity = Gravity.CENTER
+
+                    setPadding(
+                        dp(20),
+                        dp(12),
+                        dp(20),
+                        dp(12)
+                    )
+
+                    // Unique error-style box
+                    background = GradientDrawable().apply {
+
+                        setColor(
+                            theme.errorBackgroundColor
+                        )
+
+                        cornerRadius =
+                            dp(10).toFloat()
+
+                        setStroke(
+                            dp(1),
+                            theme.errorBorderColor
+                        )
+                    }
+                }
+
+                root.addView(
+                    errorText,
+                    LinearLayout.LayoutParams(
+                        LayoutParams.MATCH_PARENT,
+                        LayoutParams.WRAP_CONTENT
+                    ).apply {
+
+                        leftMargin = dp(0)
+                        rightMargin = dp(0)
+                        topMargin = dp(10)
+                        bottomMargin = dp(0)
+                    }
+                )
+            }
 
             fun showSkeleton() {
 

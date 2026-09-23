@@ -11,7 +11,7 @@ data class RewardsColorCombination(
 
     val backgroundColor: Int = Color.parseColor("#F7F8FC"),
     val primaryColor: Int = Color.parseColor("#FF6B35"),
-    val secondaryColor: Int =  Color.WHITE,
+    val secondaryColor: Int = Color.WHITE,
 
     // =========================
     // CARD
@@ -51,8 +51,8 @@ data class RewardsColorCombination(
     // BUTTON
     // =========================
 
-    val buttonColor: Int = Color.WHITE,
-    val buttonTextColor: Int = Color.parseColor("#FF6B35"),
+    val buttonColor: Int = Color.parseColor("#ff6b35"),
+    val buttonTextColor: Int = Color.WHITE,
 
     // =========================
     // BADGE
@@ -75,6 +75,13 @@ data class RewardsColorCombination(
 
     val borderColor: Int = Color.parseColor("#E5E7EB"),
 
+    // =========================
+    // ERROR COLORS
+    // =========================
+
+    val errorTextColor: Int = Color.RED,
+    val errorBackgroundColor: Int = 0xFFFFF1F1.toInt(),
+    val errorBorderColor: Int = 0xFFFFD0D0.toInt(),
     // =========================
     // SHADOW
     // =========================

@@ -137,10 +137,18 @@ object MobyApi {
 
                         try {
 
-                            val json =
-                                JSONObject(response)
+                            val json = JSONObject(response)
 
-                            onSuccess(json)
+                            if (json.optBoolean("fbIsError", false)) {
+                                onError(
+                                    json.optString(
+                                        "fsMessage",
+                                        "Unknown API error"
+                                    )
+                                )
+                            } else {
+                                onSuccess(json)
+                            }
 
                         } catch (e: Exception) {
 
@@ -289,10 +297,18 @@ object MobyApi {
 
                         try {
 
-                            val json =
-                                JSONObject(response)
+                            val json = JSONObject(response)
 
-                            onSuccess(json)
+                            if (json.optBoolean("fbIsError", false)) {
+                                onError(
+                                    json.optString(
+                                        "fsMessage",
+                                        "Unknown API error"
+                                    )
+                                )
+                            } else {
+                                onSuccess(json)
+                            }
 
                         } catch (e: Exception) {
 
@@ -436,10 +452,18 @@ object MobyApi {
 
                         try {
 
-                            val json =
-                                JSONObject(response)
+                            val json = JSONObject(response)
 
-                            onSuccess(json)
+                            if (json.optBoolean("fbIsError", false)) {
+                                onError(
+                                    json.optString(
+                                        "fsMessage",
+                                        "Unknown API error"
+                                    )
+                                )
+                            } else {
+                                onSuccess(json)
+                            }
 
                         } catch (e: Exception) {
 
