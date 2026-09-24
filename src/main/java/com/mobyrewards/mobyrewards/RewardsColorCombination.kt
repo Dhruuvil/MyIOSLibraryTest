@@ -51,8 +51,8 @@ data class RewardsColorCombination(
     // BUTTON
     // =========================
 
-    val buttonColor: Int = Color.parseColor("#ff6b35"),
-    val buttonTextColor: Int = Color.WHITE,
+    val buttonColor = Color.WHITE,
+    val buttonTextColor = Color.parseColor("#ff6b35"),
 
     // =========================
     // BADGE
