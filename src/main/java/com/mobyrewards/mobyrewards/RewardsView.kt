@@ -6,7 +6,9 @@ import android.graphics.BitmapFactory
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
-import android.view.ViewOutlineProvider
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -32,6 +34,7 @@ class RewardsView(
     context: android.content.Context
 ) : FrameLayout(context) {
 
+    private lateinit var dotsContainer: LinearLayout
     private lateinit var titleText: TextView
     private lateinit var subtitleText: TextView
     private lateinit var sectionText: TextView
@@ -39,7 +42,7 @@ class RewardsView(
     private lateinit var activeTab: TextView
     private lateinit var pager: ViewPager2
 
-    private var theme: RewardsColorCombination = RewardsColorCombination()
+    private var theme = RewardsColorCombination()
     private var cardColors: RewardsCardColors? = null
 
     private var showActive = false
@@ -178,8 +181,8 @@ class RewardsView(
         )
 
         // =====================================================
-        // PAGER
-        // =====================================================
+// PAGER
+// =====================================================
 
         pager = ViewPager2(context).apply {
             adapter = this@RewardsView.adapter
@@ -191,11 +194,52 @@ class RewardsView(
             pager,
             LinearLayout.LayoutParams(
                 LayoutParams.MATCH_PARENT,
-                0,
-                1f
+                dp(315)
             ).apply {
                 topMargin = dp(theme.pagerTopMargin)
             }
+        )
+
+// =====================================================
+// DOTS - IMMEDIATELY BELOW SLIDER
+// =====================================================
+
+        dotsContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+
+        content.addView(
+            dotsContainer,
+            LinearLayout.LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                dp(theme.dotsHeight)
+            ).apply {
+                topMargin = dp(2)
+            }
+        )
+
+        pager.registerOnPageChangeCallback(
+            object : ViewPager2.OnPageChangeCallback() {
+
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+
+                    dotsContainer.removeAllViews()
+
+                    addDots(
+                        dotsContainer,
+                        position,
+                        theme
+                    )
+                }
+            }
+        )
+
+        addDots(
+            dotsContainer,
+            0,
+            theme
         )
 
         pager.setPageTransformer { page, position ->
@@ -273,7 +317,20 @@ class RewardsView(
             loadUpcomingOffers()
         }
     }
+    private fun refreshDots() {
 
+        if (!::dotsContainer.isInitialized) {
+            return
+        }
+
+        dotsContainer.removeAllViews()
+
+        addDots(
+            dotsContainer,
+            pager.currentItem,
+            theme
+        )
+    }
     private fun loadUpcomingOffers() {
 
         isLoading = true
@@ -310,6 +367,8 @@ class RewardsView(
                 storedFiUserId = response.optString("fiUserId", "")
 
                 setUpcomingOffers(response)
+
+                refreshDots()
             },
             onError = { error ->
 
@@ -550,6 +609,8 @@ class RewardsView(
                 )
 
                 setActiveOffers(response)
+
+                refreshDots()
 
                 isLoading = false
                 showActive = true
@@ -1128,11 +1189,6 @@ class RewardsView(
 
                 root.addView(card)
 
-                addDots(
-                    root,
-                    position,
-                    theme
-                )
             }
         }
     }
@@ -1782,37 +1838,14 @@ class RewardsView(
             }
         }
 
-        val cashbackText =
-            if (reward.cashback.isNotBlank()) {
-                "${reward.cashback} Cashback"
-            } else {
-                reward.offer
-            }
-
-        val cashback = text(
-            cashbackText,
-            c.titleTextSize,
-            c.titleTextColor,
-            true
-        )
-
-        cashback.gravity = Gravity.CENTER
-
-        offerBox.addView(
-            cashback,
-            LinearLayout.LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                LayoutParams.WRAP_CONTENT
-            )
-        )
-
+// DISCOUNT FIRST
         if (reward.discount.isNotBlank()) {
 
             val discount = text(
                 "Discount Up to ${reward.discount}",
-                c.smallTextSize,
-                c.mutedTextColor,
-                false
+                c.titleTextSize,
+                c.titleTextColor,
+                bold = true
             )
 
             discount.gravity = Gravity.CENTER
@@ -1822,11 +1855,36 @@ class RewardsView(
                 LinearLayout.LayoutParams(
                     LayoutParams.MATCH_PARENT,
                     LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = dp(3)
-                }
+                )
             )
         }
+
+// CASHBACK BELOW
+        val cashbackText =
+            if (reward.cashback.isNotBlank()) {
+                "${reward.cashback} Cashback"
+            } else {
+                reward.offer
+            }
+
+        val cashback = text(
+            cashbackText,
+            c.smallTextSize,
+            c.mutedTextColor,
+            false
+        )
+
+        cashback.gravity = Gravity.CENTER
+
+        offerBox.addView(
+            cashback,
+            LinearLayout.LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(3)
+            }
+        )
 
         card.addView(
             offerBox,
@@ -1879,14 +1937,43 @@ class RewardsView(
                 )
             )
 
-            val copy = text(
-                "",
-                c.bodyTextSize,
-                c.secondaryColor,
-                true
-            )
+            // COPY ICON
+            val copy = ImageView(context).apply {
 
-            copy.gravity = Gravity.CENTER
+                setImageResource(
+                    R.drawable.ic_copy
+                )
+
+                setColorFilter(
+                    c.secondaryColor
+                )
+
+                scaleType = ImageView.ScaleType.CENTER
+
+                isClickable = true
+                isFocusable = true
+
+                setOnClickListener {
+
+                    val clipboard =
+                        context.getSystemService(
+                            ClipboardManager::class.java
+                        )
+
+                    val clip = ClipData.newPlainText(
+                        "Coupon Code",
+                        reward.code
+                    )
+
+                    clipboard?.setPrimaryClip(clip)
+
+                    Toast.makeText(
+                        context,
+                        "Coupon copied successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
 
             couponBox.addView(
                 copy,
@@ -1933,7 +2020,7 @@ class RewardsView(
 
         val calendarIcon = ImageView(context).apply {
             setImageResource(
-                com.mobyrewards.mobyrewards.R.drawable.ic_calendar
+                R.drawable.ic_calendar
             )
 
             scaleType = ImageView.ScaleType.CENTER_INSIDE
@@ -2004,17 +2091,46 @@ class RewardsView(
 
         shopNow.setOnClickListener {
 
+            // Copy coupon code automatically
+            if (reward.code.isNotBlank()) {
+
+                val clipboard =
+                    context.getSystemService(
+                        ClipboardManager::class.java
+                    )
+
+                val clip = ClipData.newPlainText(
+                    "Coupon Code",
+                    reward.code
+                )
+
+                clipboard?.setPrimaryClip(clip)
+
+                Toast.makeText(
+                    context,
+                    "Coupon copied successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            // Wait 1 second, then open Shop Now page
             if (reward.couponLink.isNotBlank()) {
 
-                try {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse(reward.couponLink)
+                postDelayed({
+
+                    try {
+
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(reward.couponLink)
+                            )
                         )
-                    )
-                } catch (_: Exception) {
-                }
+
+                    } catch (_: Exception) {
+                    }
+
+                }, 1000)
             }
         }
 
