@@ -15,22 +15,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check Xcode version
+      - name: Check Xcode
         run: xcodebuild -version
 
-      - name: Check Swift version
-        run: swift --version
-
-      - name: Resolve package dependencies
+      - name: Resolve package
         run: swift package resolve
 
-      - name: Build Swift package
-        run: swift build
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild \
+            -scheme MobyRewards \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            build
 
-      - name: Upload build files
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: moby-rewards-build-output
-          path: .build/
-          if-no-files-found: ignore
+      - name: Build for iOS Device
+        run: |
+          xcodebuild \
+            -scheme MobyRewards \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            build
