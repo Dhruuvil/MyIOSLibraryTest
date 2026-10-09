@@ -1,0 +1,78 @@
+```yaml
+name: Build MobyRewards XCFramework
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Validate Swift Package
+        run: |
+          swift package describe
+          swift package resolve
+
+      - name: Build iOS device framework
+        run: |
+          xcodebuild archive \
+            -scheme MobyRewards \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/MobyRewards-iOS.xcarchive" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData-iOS" \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+      - name: Build iOS Simulator framework
+        run: |
+          xcodebuild archive \
+            -scheme MobyRewards \
+            -destination "generic/platform=iOS Simulator" \
+            -archivePath "$RUNNER_TEMP/MobyRewards-Simulator.xcarchive" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData-Simulator" \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+      - name: Create XCFramework
+        run: |
+          DEVICE="$RUNNER_TEMP/MobyRewards-iOS.xcarchive/Products/Library/Frameworks/MobyRewards.framework"
+          SIMULATOR="$RUNNER_TEMP/MobyRewards-Simulator.xcarchive/Products/Library/Frameworks/MobyRewards.framework"
+
+          test -d "$DEVICE"
+          test -d "$SIMULATOR"
+
+          xcodebuild -create-xcframework \
+            -framework "$DEVICE" \
+            -framework "$SIMULATOR" \
+            -output "$RUNNER_TEMP/MobyRewards.xcframework"
+
+      - name: Package and checksum
+        run: |
+          cd "$RUNNER_TEMP"
+          ditto -c -k --sequesterRsrc --keepParent \
+            MobyRewards.xcframework MobyRewards.xcframework.zip
+          swift package compute-checksum MobyRewards.xcframework.zip \
+            > MobyRewards.checksum
+          cat MobyRewards.checksum
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MobyRewards-XCFramework
+          path: |
+            ${{ runner.temp }}/MobyRewards.xcframework.zip
+            ${{ runner.temp }}/MobyRewards.checksum
+          if-no-files-found: error
+```
