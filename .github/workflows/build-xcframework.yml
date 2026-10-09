@@ -1,3 +1,4 @@
+```yaml
 name: Build MobyRewards XCFramework
 
 on:
@@ -6,9 +7,12 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   build:
-    name: Build iOS Swift Package
+    name: Build and Package XCFramework
     runs-on: macos-15
 
     steps:
@@ -18,21 +22,47 @@ jobs:
       - name: Check Xcode
         run: xcodebuild -version
 
-      - name: Resolve package
-        run: swift package resolve
-
-      - name: Build for iOS Simulator
+      - name: Build iOS Device
         run: |
-          xcodebuild \
-            -scheme MobyRewards \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build/DerivedData \
-            build
-
-      - name: Build for iOS Device
-        run: |
-          xcodebuild \
+          xcodebuild build \
             -scheme MobyRewards \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
-            build
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+      - name: Build iOS Simulator
+        run: |
+          xcodebuild build \
+            -scheme MobyRewards \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+      - name: Create XCFramework
+        run: |
+          DEVICE_FRAMEWORK="build/DerivedData/Build/Products/Debug-iphoneos/MobyRewards.framework"
+          SIMULATOR_FRAMEWORK="build/DerivedData/Build/Products/Debug-iphonesimulator/MobyRewards.framework"
+
+          test -d "$DEVICE_FRAMEWORK"
+          test -d "$SIMULATOR_FRAMEWORK"
+
+          xcodebuild -create-xcframework \
+            -framework "$DEVICE_FRAMEWORK" \
+            -framework "$SIMULATOR_FRAMEWORK" \
+            -output MobyRewards.xcframework
+
+      - name: Package XCFramework
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            MobyRewards.xcframework MobyRewards.xcframework.zip
+          swift package compute-checksum MobyRewards.xcframework.zip
+
+      - name: Upload XCFramework artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MobyRewards-XCFramework
+          path: MobyRewards.xcframework.zip
+          if-no-files-found: error
+                                              
