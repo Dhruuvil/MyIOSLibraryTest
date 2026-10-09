@@ -14,5 +14,6 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mobycashback.MobyRewards
         DEFINES_MODULE: YES
+        GENERATE_INFOPLIST_FILE: YES
         BUILD_LIBRARY_FOR_DISTRIBUTION: YES
         SKIP_INSTALL: NO
