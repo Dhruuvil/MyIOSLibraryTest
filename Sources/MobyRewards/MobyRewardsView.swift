@@ -632,35 +632,11 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
             scratchView?.isHidden = true
         }
 
-        closeButton.addAction(UIAction { [weak overlay, weak self] _ in
-            guard let self = self, let overlay = overlay else { return }
-
-            if !mutableReward.scratched {
-                overlay.removeFromSuperview()
-                return
-            }
-
-            if mutableReward.adId > 0 && !self.storedFsToken.isEmpty && !self.storedFiUserId.isEmpty {
-                MobyApi.directSubmitQuiz(
-                    adId: mutableReward.adId,
-                    deviceUniqueId: 3,
-                    token: self.storedFsToken,
-                    userId: self.storedFiUserId,
-                    userContact: self.libraryDeviceId,
-                    deviceId: self.libraryDeviceId,
-                    isPwa: "no",
-                    onSuccess: { [weak self] _ in
-                        self?.loadActiveOffers()
-                        overlay.removeFromSuperview()
-                    },
-                    onError: { _ in
-                        overlay.removeFromSuperview()
-                    }
-                )
-            } else {
-                overlay.removeFromSuperview()
-            }
-        }, for: .touchUpInside)
+        closeButton.addTarget(
+    self,
+    action: #selector(closeButtonTapped),
+    for: .touchUpInside
+)
 
         window.addSubview(overlay)
     }
