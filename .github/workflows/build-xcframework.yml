@@ -1,4 +1,3 @@
-```yaml
 name: Build MobyRewards XCFramework
 
 on:
@@ -9,33 +8,29 @@ on:
 
 jobs:
   build:
-    name: Build iOS XCFramework
+    name: Build iOS Swift Package
     runs-on: macos-15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Xcode version
+      - name: Check Xcode version
         run: xcodebuild -version
 
-      - name: Find project files
-        run: |
-          echo "Repository files:"
-          find . -maxdepth 4 \
-            \( -name "Package.swift" -o -name "*.xcodeproj" -o -name "*.xcworkspace" \) \
-            -print
+      - name: Check Swift version
+        run: swift --version
 
-      - name: Build Swift Package
-        run: |
-          swift package resolve
-          swift build
+      - name: Resolve package dependencies
+        run: swift package resolve
 
-      - name: Upload build logs
+      - name: Build Swift package
+        run: swift build
+
+      - name: Upload build files
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: moby-rewards-build-logs
-          path: |
-            .build/
+          name: moby-rewards-build-output
+          path: .build/
           if-no-files-found: ignore
