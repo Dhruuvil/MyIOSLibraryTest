@@ -100,6 +100,7 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
     private var activeRewards: [Reward] = []
 
+    private var rewardPendingActivation: Reward?
 
 
     private var visibleRewards: [Reward] {
@@ -1256,13 +1257,14 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
 
 
-        scratchView.onScratchComplete = { [weak scratchView] in
-
+        scratchView.onScratchComplete = { [weak self, weak scratchView] in
             mutableReward.scratched = true
+            mutableReward.active = true
+
+            self?.rewardPendingActivation = mutableReward
 
             scratchView?.isHidden = true
-
-        }
+}
 
 
 
@@ -1380,11 +1382,43 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
 
     @objc private func closeButtonTapped() {
-        guard let window = self.window ??
-            UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
-            return
+    guard let window = self.window ??
+        UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+        return
+    }
+
+    // Move the scratched reward to Active only after closing the popup.
+    if let reward = rewardPendingActivation {
+        upcomingRewards.removeAll { $0.adId == reward.adId }
+
+        if let existingIndex = activeRewards.firstIndex(where: {
+            $0.adId == reward.adId
+        }) {
+            activeRewards[existingIndex] = reward
+        } else {
+            activeRewards.insert(reward, at: 0)
         }
-        window.viewWithTag(99912)?.removeFromSuperview()
+
+        rewardPendingActivation = nil
+
+        showActive = true
+        isLoading = false
+        errorMessage = ""
+
+        applyTabsStyle()
+        collectionView.reloadData()
+        refreshDots()
+
+        if !activeRewards.isEmpty {
+            collectionView.scrollToItem(
+                at: IndexPath(item: 0, section: 0),
+                at: .centeredHorizontally,
+                animated: false
+            )
+        }
+    }
+
+    window.viewWithTag(99912)?.removeFromSuperview()
     }
 
 }
