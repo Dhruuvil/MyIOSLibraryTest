@@ -1,3 +1,4 @@
+```yaml
 name: Build MobyRewards XCFramework
 
 on:
@@ -7,7 +8,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -21,41 +22,53 @@ jobs:
       - name: Check Xcode
         run: xcodebuild -version
 
-      - name: Build iOS Device
+      - name: Archive iOS Device
         run: |
-          xcodebuild build \
+          xcodebuild archive \
             -scheme MobyRewards \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build/DerivedData \
+            -destination "generic/platform=iOS" \
+            -archivePath "$PWD/build/MobyRewards-iOS.xcarchive" \
             SKIP_INSTALL=NO \
             BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
-      - name: Build iOS Simulator
+      - name: Archive iOS Simulator
         run: |
-          xcodebuild build \
+          xcodebuild archive \
             -scheme MobyRewards \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build/DerivedData \
+            -destination "generic/platform=iOS Simulator" \
+            -archivePath "$PWD/build/MobyRewards-Simulator.xcarchive" \
             SKIP_INSTALL=NO \
             BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+      - name: Locate Framework Products
+        id: locate
+        run: |
+          find build -name "MobyRewards.framework" -type d
+          DEVICE="build/MobyRewards-iOS.xcarchive/Products/Library/Frameworks/MobyRewards.framework"
+          SIMULATOR="build/MobyRewards-Simulator.xcarchive/Products/Library/Frameworks/MobyRewards.framework"
+
+          test -d "$DEVICE" || {
+            echo "Device framework not found at $DEVICE"
+            exit 1
+          }
+
+          test -d "$SIMULATOR" || {
+            echo "Simulator framework not found at $SIMULATOR"
+            exit 1
+          }
 
       - name: Create XCFramework
         run: |
-          DEVICE_FRAMEWORK="build/DerivedData/Build/Products/Debug-iphoneos/MobyRewards.framework"
-          SIMULATOR_FRAMEWORK="build/DerivedData/Build/Products/Debug-iphonesimulator/MobyRewards.framework"
-
-          test -d "$DEVICE_FRAMEWORK"
-          test -d "$SIMULATOR_FRAMEWORK"
-
           xcodebuild -create-xcframework \
-            -framework "$DEVICE_FRAMEWORK" \
-            -framework "$SIMULATOR_FRAMEWORK" \
-            -output MobyRewards.xcframework
+            -framework "build/MobyRewards-iOS.xcarchive/Products/Library/Frameworks/MobyRewards.framework" \
+            -framework "build/MobyRewards-Simulator.xcarchive/Products/Library/Frameworks/MobyRewards.framework" \
+            -output "$PWD/MobyRewards.xcframework"
 
-      - name: Package XCFramework
+      - name: Zip XCFramework
         run: |
           ditto -c -k --sequesterRsrc --keepParent \
             MobyRewards.xcframework MobyRewards.xcframework.zip
+
           swift package compute-checksum MobyRewards.xcframework.zip
 
       - name: Upload XCFramework artifact
@@ -64,4 +77,3 @@ jobs:
           name: MobyRewards-XCFramework
           path: MobyRewards.xcframework.zip
           if-no-files-found: error
-                                              
