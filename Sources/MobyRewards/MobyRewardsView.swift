@@ -1914,67 +1914,69 @@ private class ActiveCardView: UIView {
 
         if reward.rating > 0 {
 
+            // Fixed-width rating pill with a native flame icon.
+            let ratingPill = UIStackView()
+            ratingPill.translatesAutoresizingMaskIntoConstraints = false
+            ratingPill.axis = .horizontal
+            ratingPill.alignment = .center
+            ratingPill.distribution = .fill
+            ratingPill.spacing = 5
+            ratingPill.isLayoutMarginsRelativeArrangement = true
+            ratingPill.layoutMargins = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+            ratingPill.backgroundColor = theme.secondaryColor
+            ratingPill.layer.cornerRadius = theme.ratingRadius
+            ratingPill.clipsToBounds = true
+
+            let fireIcon = UIImageView(image: UIImage(systemName: "flame.fill"))
+            fireIcon.translatesAutoresizingMaskIntoConstraints = false
+            fireIcon.contentMode = .scaleAspectFit
+            fireIcon.tintColor = theme.primaryColor
+
             let ratingLabel = UILabel()
-
-            ratingLabel.translatesAutoresizingMaskIntoConstraints = false
-
-            ratingLabel.text = "🔥 \(reward.rating)"
-
+            ratingLabel.text = "\(reward.rating)"
             ratingLabel.font = theme.font(ofSize: theme.bodyTextSize, weight: .bold)
-
             ratingLabel.textColor = theme.primaryColor
-
-            ratingLabel.backgroundColor = theme.secondaryColor
-
-            ratingLabel.layer.cornerRadius = theme.ratingRadius
-
-            ratingLabel.layer.masksToBounds = true
-
             ratingLabel.textAlignment = .center
+            ratingLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-
-
-            let ratingPaddingView = UIView()
-
-            ratingPaddingView.addSubview(ratingLabel)
-
+            ratingPill.addArrangedSubview(fireIcon)
+            ratingPill.addArrangedSubview(ratingLabel)
             NSLayoutConstraint.activate([
-
-                ratingLabel.topAnchor.constraint(equalTo: ratingPaddingView.topAnchor),
-
-                ratingLabel.bottomAnchor.constraint(equalTo: ratingPaddingView.bottomAnchor),
-
-                ratingLabel.leadingAnchor.constraint(equalTo: ratingPaddingView.leadingAnchor),
-
-                ratingLabel.trailingAnchor.constraint(equalTo: ratingPaddingView.trailingAnchor),
-
-                ratingLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 50),
-
-                ratingLabel.heightAnchor.constraint(equalToConstant: 28)
-
+                ratingPill.widthAnchor.constraint(equalToConstant: 66),
+                ratingPill.heightAnchor.constraint(equalToConstant: 28),
+                fireIcon.widthAnchor.constraint(equalToConstant: 16),
+                fireIcon.heightAnchor.constraint(equalToConstant: 18)
             ])
-
-            topRow.addArrangedSubview(ratingPaddingView)
-
+            topRow.addArrangedSubview(ratingPill)
         }
-
-
 
         container.addArrangedSubview(topRow)
 
+        // Unlocked Message with a native celebration icon.
+        let messageRow = UIStackView()
+        messageRow.axis = .horizontal
+        messageRow.alignment = .center
+        messageRow.spacing = 6
 
-
-        // Unlocked Message
+        let celebrationIcon = UIImageView(image: UIImage(systemName: "party.popper.fill"))
+        celebrationIcon.translatesAutoresizingMaskIntoConstraints = false
+        celebrationIcon.contentMode = .scaleAspectFit
+        celebrationIcon.tintColor = theme.secondaryColor
+        NSLayoutConstraint.activate([
+            celebrationIcon.widthAnchor.constraint(equalToConstant: 16),
+            celebrationIcon.heightAnchor.constraint(equalToConstant: 16)
+        ])
 
         let messageLabel = UILabel()
-
-        messageLabel.text = "🎉 You unlocked an exclusive offer!"
-
+        messageLabel.text = "You unlocked an exclusive offer!"
         messageLabel.font = theme.font(ofSize: theme.smallTextSize, weight: .regular)
-
         messageLabel.textColor = theme.secondaryColor
+        messageLabel.numberOfLines = 1
+        messageLabel.lineBreakMode = .byTruncatingTail
 
-        container.addArrangedSubview(messageLabel)
+        messageRow.addArrangedSubview(celebrationIcon)
+        messageRow.addArrangedSubview(messageLabel)
+        container.addArrangedSubview(messageRow)
 
 
 
