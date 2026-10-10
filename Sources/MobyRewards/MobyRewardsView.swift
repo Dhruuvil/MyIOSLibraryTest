@@ -1980,59 +1980,42 @@ private class ActiveCardView: UIView {
 
 
 
-        // Offer Box
-
+        // Offer Box — preserve the existing design and keep the content visible.
         let offerBox = UIStackView()
-
+        offerBox.translatesAutoresizingMaskIntoConstraints = false
         offerBox.axis = .vertical
-
-        offerBox.alignment = .center
-
+        offerBox.alignment = .fill
+        offerBox.distribution = .fill
         offerBox.spacing = 3
-
         offerBox.backgroundColor = theme.secondaryColor
-
         offerBox.layer.cornerRadius = theme.offerBoxRadius
-
+        offerBox.clipsToBounds = true
         offerBox.isLayoutMarginsRelativeArrangement = true
-
         offerBox.layoutMargins = UIEdgeInsets(top: 11, left: 10, bottom: 11, right: 10)
 
+        let discountLabel = UILabel()
+        let discountText = !reward.discount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Discount Up to \(reward.discount)"
+            : (!reward.offer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? reward.offer
+                : "Exclusive Offer")
+        discountLabel.text = discountText
+        discountLabel.font = theme.font(ofSize: theme.titleTextSize, weight: .bold)
+        discountLabel.textColor = theme.titleTextColor
+        discountLabel.textAlignment = .center
+        discountLabel.numberOfLines = 2
+        offerBox.addArrangedSubview(discountLabel)
 
-
-        if !reward.discount.isEmpty {
-
-            let discountLabel = UILabel()
-
-            discountLabel.text = "Discount Up to \(reward.discount)"
-
-            discountLabel.font = theme.font(ofSize: theme.titleTextSize, weight: .bold)
-
-            discountLabel.textColor = theme.titleTextColor
-
-            discountLabel.textAlignment = .center
-
-            offerBox.addArrangedSubview(discountLabel)
-
+        let cashbackText = !reward.cashback.isEmpty ? "\(reward.cashback) Cashback" : ""
+        if !cashbackText.isEmpty {
+            let cashbackLabel = UILabel()
+            cashbackLabel.text = cashbackText
+            cashbackLabel.font = theme.font(ofSize: theme.smallTextSize, weight: .regular)
+            cashbackLabel.textColor = theme.mutedTextColor
+            cashbackLabel.textAlignment = .center
+            cashbackLabel.numberOfLines = 1
+            offerBox.addArrangedSubview(cashbackLabel)
         }
-
-
-
-        let cashbackText = !reward.cashback.isEmpty ? "\(reward.cashback) Cashback" : reward.offer
-
-        let cashbackLabel = UILabel()
-
-        cashbackLabel.text = cashbackText
-
-        cashbackLabel.font = theme.font(ofSize: theme.smallTextSize, weight: .regular)
-
-        cashbackLabel.textColor = theme.mutedTextColor
-
-        cashbackLabel.textAlignment = .center
-
-        offerBox.addArrangedSubview(cashbackLabel)
-
-
 
         container.addArrangedSubview(offerBox)
 
@@ -2165,9 +2148,14 @@ private class ActiveCardView: UIView {
         shopNowButton.backgroundColor = theme.buttonColor
         shopNowButton.layer.cornerRadius = theme.shopRadius
         shopNowButton.clipsToBounds = true
-        shopNowButton.contentEdgeInsets = UIEdgeInsets(top: 9, left: 18, bottom: 9, right: 18)
+        shopNowButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+        shopNowButton.titleLabel?.lineBreakMode = .byClipping
         shopNowButton.setContentHuggingPriority(.required, for: .horizontal)
         shopNowButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        NSLayoutConstraint.activate([
+            shopNowButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 112),
+            shopNowButton.heightAnchor.constraint(equalToConstant: 38)
+        ])
 
         self.onShopNowAction = { [weak self] in
             if !reward.code.isEmpty {
