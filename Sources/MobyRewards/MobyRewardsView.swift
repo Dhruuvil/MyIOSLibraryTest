@@ -100,7 +100,6 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
     private var activeRewards: [Reward] = []
 
-    private var rewardPendingActivation: Reward?
 
 
     private var visibleRewards: [Reward] {
@@ -1258,13 +1257,23 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
 
         scratchView.onScratchComplete = { [weak self, weak scratchView] in
+
+            guard let self = self else { return }
+
             mutableReward.scratched = true
             mutableReward.active = true
 
-            self?.rewardPendingActivation = mutableReward
+            // Move the scratched reward from Upcoming to Active.
+            self.upcomingRewards.removeAll { $0.adId == mutableReward.adId }
+            if !self.activeRewards.contains(where: { $0.adId == mutableReward.adId }) {
+                self.activeRewards.append(mutableReward)
+            }
 
             scratchView?.isHidden = true
-}
+            self.collectionView.reloadData()
+            self.applyTabsStyle()
+
+        }
 
 
 
@@ -1382,43 +1391,11 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
 
     @objc private func closeButtonTapped() {
-    guard let window = self.window ??
-        UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
-        return
-    }
-
-    // Move the scratched reward to Active only after closing the popup.
-    if let reward = rewardPendingActivation {
-        upcomingRewards.removeAll { $0.adId == reward.adId }
-
-        if let existingIndex = activeRewards.firstIndex(where: {
-            $0.adId == reward.adId
-        }) {
-            activeRewards[existingIndex] = reward
-        } else {
-            activeRewards.insert(reward, at: 0)
+        guard let window = self.window ??
+            UIApplication.shared.windows.first(where: { $0.isKeyWindow }) else {
+            return
         }
-
-        rewardPendingActivation = nil
-
-        showActive = true
-        isLoading = false
-        errorMessage = ""
-
-        applyTabsStyle()
-        collectionView.reloadData()
-        refreshDots()
-
-        if !activeRewards.isEmpty {
-            collectionView.scrollToItem(
-                at: IndexPath(item: 0, section: 0),
-                at: .centeredHorizontally,
-                animated: false
-            )
-        }
-    }
-
-    window.viewWithTag(99912)?.removeFromSuperview()
+        window.viewWithTag(99912)?.removeFromSuperview()
     }
 
 }
@@ -1843,9 +1820,9 @@ private class ActiveCardView: UIView {
 
         logoImageView.translatesAutoresizingMaskIntoConstraints = false
 
-        logoImageView.contentMode = .scaleAspectFill
+        logoImageView.contentMode = .scaleAspectFit
 
-        logoImageView.backgroundColor = .black
+        logoImageView.backgroundColor = .clear
 
         logoImageView.layer.cornerRadius = theme.activeLogoRadius
 
@@ -2130,64 +2107,53 @@ private class ActiveCardView: UIView {
 
 
         // Bottom Row: Expiry Left | Shop Now Right
-
         let bottomRow = UIStackView()
-
+        bottomRow.translatesAutoresizingMaskIntoConstraints = false
         bottomRow.axis = .horizontal
-
         bottomRow.alignment = .center
-
-
+        bottomRow.distribution = .fill
+        bottomRow.spacing = 8
 
         let expiryStack = UIStackView()
-
         expiryStack.axis = .horizontal
-
+        expiryStack.alignment = .center
         expiryStack.spacing = 5
+        expiryStack.distribution = .fill
 
-
-
-        let calLabel = UILabel()
-
-        calLabel.text = "📅"
-
-        calLabel.font = theme.font(ofSize: 14)
-
-
+        let calLabel = UIImageView(image: UIImage(systemName: "calendar"))
+        calLabel.tintColor = theme.secondaryColor
+        calLabel.contentMode = .scaleAspectFit
+        calLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            calLabel.widthAnchor.constraint(equalToConstant: 14),
+            calLabel.heightAnchor.constraint(equalToConstant: 14)
+        ])
+        calLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         let expiryLabel = UILabel()
-
         expiryLabel.text = !reward.expiryDate.isEmpty ? reward.expiryDate : "-"
-
         expiryLabel.font = theme.font(ofSize: theme.smallTextSize, weight: .regular)
-
         expiryLabel.textColor = theme.secondaryColor
-
-
+        expiryLabel.textAlignment = .left
+        expiryLabel.numberOfLines = 1
+        expiryLabel.lineBreakMode = .byTruncatingTail
+        expiryLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         expiryStack.addArrangedSubview(calLabel)
-
         expiryStack.addArrangedSubview(expiryLabel)
 
-
-
         let shopNowButton = UIButton(type: .custom)
-
         shopNowButton.translatesAutoresizingMaskIntoConstraints = false
-
         shopNowButton.setTitle("SHOP NOW", for: .normal)
-
         shopNowButton.setTitleColor(theme.buttonTextColor, for: .normal)
-
         shopNowButton.titleLabel?.font = theme.font(ofSize: theme.buttonTextSize, weight: .bold)
-
+        shopNowButton.titleLabel?.textAlignment = .center
         shopNowButton.backgroundColor = theme.buttonColor
-
         shopNowButton.layer.cornerRadius = theme.shopRadius
-
-        shopNowButton.contentEdgeInsets = UIEdgeInsets(top: 9, left: 17, bottom: 9, right: 17)
-
-
+        shopNowButton.clipsToBounds = true
+        shopNowButton.contentEdgeInsets = UIEdgeInsets(top: 9, left: 18, bottom: 9, right: 18)
+        shopNowButton.setContentHuggingPriority(.required, for: .horizontal)
+        shopNowButton.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         self.onShopNowAction = { [weak self] in
             if !reward.code.isEmpty {
@@ -2203,14 +2169,8 @@ private class ActiveCardView: UIView {
         }
         shopNowButton.addTarget(self, action: #selector(shopNowTapped), for: .touchUpInside)
 
-
-
         bottomRow.addArrangedSubview(expiryStack)
-
         bottomRow.addArrangedSubview(shopNowButton)
-
-
-
         container.addArrangedSubview(bottomRow)
 
     }
