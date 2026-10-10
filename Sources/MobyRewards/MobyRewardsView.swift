@@ -1914,124 +1914,112 @@ private class ActiveCardView: UIView {
 
         if reward.rating > 0 {
 
+            // Fixed-width rating pill with a native flame icon.
+            let ratingPill = UIStackView()
+            ratingPill.translatesAutoresizingMaskIntoConstraints = false
+            ratingPill.axis = .horizontal
+            ratingPill.alignment = .center
+            ratingPill.distribution = .fill
+            ratingPill.spacing = 5
+            ratingPill.isLayoutMarginsRelativeArrangement = true
+            ratingPill.layoutMargins = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+            ratingPill.backgroundColor = theme.secondaryColor
+            ratingPill.layer.cornerRadius = theme.ratingRadius
+            ratingPill.clipsToBounds = true
+
+            let fireIcon = UIImageView(image: UIImage(systemName: "flame.fill"))
+            fireIcon.translatesAutoresizingMaskIntoConstraints = false
+            fireIcon.contentMode = .scaleAspectFit
+            fireIcon.tintColor = theme.primaryColor
+
             let ratingLabel = UILabel()
-
-            ratingLabel.translatesAutoresizingMaskIntoConstraints = false
-
-            ratingLabel.text = "🔥 \(reward.rating)"
-
+            ratingLabel.text = "\(reward.rating)"
             ratingLabel.font = theme.font(ofSize: theme.bodyTextSize, weight: .bold)
-
             ratingLabel.textColor = theme.primaryColor
-
-            ratingLabel.backgroundColor = theme.secondaryColor
-
-            ratingLabel.layer.cornerRadius = theme.ratingRadius
-
-            ratingLabel.layer.masksToBounds = true
-
             ratingLabel.textAlignment = .center
+            ratingLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-
-
-            let ratingPaddingView = UIView()
-
-            ratingPaddingView.addSubview(ratingLabel)
-
+            ratingPill.addArrangedSubview(fireIcon)
+            ratingPill.addArrangedSubview(ratingLabel)
             NSLayoutConstraint.activate([
-
-                ratingLabel.topAnchor.constraint(equalTo: ratingPaddingView.topAnchor),
-
-                ratingLabel.bottomAnchor.constraint(equalTo: ratingPaddingView.bottomAnchor),
-
-                ratingLabel.leadingAnchor.constraint(equalTo: ratingPaddingView.leadingAnchor),
-
-                ratingLabel.trailingAnchor.constraint(equalTo: ratingPaddingView.trailingAnchor),
-
-                ratingLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 50),
-
-                ratingLabel.heightAnchor.constraint(equalToConstant: 28)
-
+                ratingPill.widthAnchor.constraint(equalToConstant: 66),
+                ratingPill.heightAnchor.constraint(equalToConstant: 28),
+                fireIcon.widthAnchor.constraint(equalToConstant: 16),
+                fireIcon.heightAnchor.constraint(equalToConstant: 18)
             ])
-
-            topRow.addArrangedSubview(ratingPaddingView)
-
+            topRow.addArrangedSubview(ratingPill)
         }
-
-
 
         container.addArrangedSubview(topRow)
 
+        // Unlocked Message with a native celebration icon.
+        let messageRow = UIStackView()
+        messageRow.axis = .horizontal
+        messageRow.alignment = .center
+        messageRow.spacing = 6
 
-
-        // Unlocked Message
+        let celebrationIcon = UIImageView(image: UIImage(systemName: "party.popper.fill"))
+        celebrationIcon.translatesAutoresizingMaskIntoConstraints = false
+        celebrationIcon.contentMode = .scaleAspectFit
+        celebrationIcon.tintColor = theme.secondaryColor
+        NSLayoutConstraint.activate([
+            celebrationIcon.widthAnchor.constraint(equalToConstant: 16),
+            celebrationIcon.heightAnchor.constraint(equalToConstant: 16)
+        ])
 
         let messageLabel = UILabel()
-
-        messageLabel.text = "🎉 You unlocked an exclusive offer!"
-
+        messageLabel.text = "You unlocked an exclusive offer!"
         messageLabel.font = theme.font(ofSize: theme.smallTextSize, weight: .regular)
-
         messageLabel.textColor = theme.secondaryColor
+        messageLabel.numberOfLines = 1
+        messageLabel.lineBreakMode = .byTruncatingTail
 
-        container.addArrangedSubview(messageLabel)
+        messageRow.addArrangedSubview(celebrationIcon)
+        messageRow.addArrangedSubview(messageLabel)
+        container.addArrangedSubview(messageRow)
 
 
 
-        // Offer Box
-
+        // Offer Box — preserve the existing design and keep the content visible.
         let offerBox = UIStackView()
-
+        offerBox.translatesAutoresizingMaskIntoConstraints = false
         offerBox.axis = .vertical
-
-        offerBox.alignment = .center
-
+        offerBox.alignment = .fill
+        offerBox.distribution = .fill
         offerBox.spacing = 3
-
-        offerBox.backgroundColor = theme.secondaryColor
-
+        offerBox.backgroundColor = .white
         offerBox.layer.cornerRadius = theme.offerBoxRadius
-
+        offerBox.clipsToBounds = true
         offerBox.isLayoutMarginsRelativeArrangement = true
-
         offerBox.layoutMargins = UIEdgeInsets(top: 11, left: 10, bottom: 11, right: 10)
 
+        let discountLabel = UILabel()
+        let discountText = !reward.discount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Discount Up to \(reward.discount)"
+            : (!reward.offer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? reward.offer
+                : "Exclusive Offer")
+        discountLabel.text = discountText
+        discountLabel.font = theme.font(ofSize: theme.titleTextSize, weight: .bold)
+        discountLabel.textColor = .darkText
+        discountLabel.textAlignment = .center
+        discountLabel.numberOfLines = 2
+        discountLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        offerBox.addArrangedSubview(discountLabel)
 
-
-        if !reward.discount.isEmpty {
-
-            let discountLabel = UILabel()
-
-            discountLabel.text = "Discount Up to \(reward.discount)"
-
-            discountLabel.font = theme.font(ofSize: theme.titleTextSize, weight: .bold)
-
-            discountLabel.textColor = theme.titleTextColor
-
-            discountLabel.textAlignment = .center
-
-            offerBox.addArrangedSubview(discountLabel)
-
+        let cashbackText = !reward.cashback.isEmpty ? "\(reward.cashback) Cashback" : ""
+        if !cashbackText.isEmpty {
+            let cashbackLabel = UILabel()
+            cashbackLabel.text = cashbackText
+            cashbackLabel.font = theme.font(ofSize: theme.smallTextSize, weight: .regular)
+            cashbackLabel.textColor = .darkGray
+            cashbackLabel.textAlignment = .center
+            cashbackLabel.numberOfLines = 1
+            cashbackLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+            offerBox.addArrangedSubview(cashbackLabel)
         }
 
-
-
-        let cashbackText = !reward.cashback.isEmpty ? "\(reward.cashback) Cashback" : reward.offer
-
-        let cashbackLabel = UILabel()
-
-        cashbackLabel.text = cashbackText
-
-        cashbackLabel.font = theme.font(ofSize: theme.smallTextSize, weight: .regular)
-
-        cashbackLabel.textColor = theme.mutedTextColor
-
-        cashbackLabel.textAlignment = .center
-
-        offerBox.addArrangedSubview(cashbackLabel)
-
-
-
+        offerBox.heightAnchor.constraint(greaterThanOrEqualToConstant: 88).isActive = true
         container.addArrangedSubview(offerBox)
 
 
@@ -2163,9 +2151,14 @@ private class ActiveCardView: UIView {
         shopNowButton.backgroundColor = theme.buttonColor
         shopNowButton.layer.cornerRadius = theme.shopRadius
         shopNowButton.clipsToBounds = true
-        shopNowButton.contentEdgeInsets = UIEdgeInsets(top: 9, left: 18, bottom: 9, right: 18)
+        shopNowButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
+        shopNowButton.titleLabel?.lineBreakMode = .byClipping
         shopNowButton.setContentHuggingPriority(.required, for: .horizontal)
         shopNowButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        NSLayoutConstraint.activate([
+            shopNowButton.widthAnchor.constraint(equalToConstant: 120),
+            shopNowButton.heightAnchor.constraint(equalToConstant: 38)
+        ])
 
         self.onShopNowAction = { [weak self] in
             if !reward.code.isEmpty {
