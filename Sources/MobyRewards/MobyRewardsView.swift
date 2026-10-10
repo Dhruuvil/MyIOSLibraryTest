@@ -1825,6 +1825,9 @@ private class ActiveCardView: UIView {
 
         topRow.distribution = .fill
         topRow.spacing = 12
+        // Keep the logo/brand row at its natural height so it cannot stretch
+        // and create an unwanted gap before the unlocked-offer message.
+        topRow.setContentHuggingPriority(.required, for: .vertical)
         topRow.setContentCompressionResistancePriority(.required, for: .vertical)
 
 
