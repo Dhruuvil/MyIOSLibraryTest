@@ -1259,7 +1259,7 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
             scratchView.bottomAnchor.constraint(equalTo: revealContainer.bottomAnchor),
 
-            scratchView.heightAnchor.constraint(equalToConstant: theme.popupScratchHeight)
+            scratchView.heightAnchor.constraint(greaterThanOrEqualToConstant: max(theme.popupScratchHeight, 360))
 
         ])
 
@@ -1794,7 +1794,8 @@ private class ActiveCardView: UIView {
 
         container.axis = .vertical
 
-        container.spacing = 10
+        container.spacing = 8
+        container.distribution = .fill
 
         addSubview(container)
 
@@ -1822,7 +1823,9 @@ private class ActiveCardView: UIView {
 
         topRow.alignment = .center
 
+        topRow.distribution = .fill
         topRow.spacing = 12
+        topRow.setContentCompressionResistancePriority(.required, for: .vertical)
 
 
 
@@ -1991,7 +1994,9 @@ private class ActiveCardView: UIView {
         offerBox.layer.cornerRadius = theme.offerBoxRadius
         offerBox.clipsToBounds = true
         offerBox.isLayoutMarginsRelativeArrangement = true
-        offerBox.layoutMargins = UIEdgeInsets(top: 11, left: 10, bottom: 11, right: 10)
+        // Keep the offer panel compact so the logo row, coupon, expiry date,
+        // and Shop Now button remain visible inside the popup.
+        offerBox.layoutMargins = UIEdgeInsets(top: 7, left: 10, bottom: 7, right: 10)
 
         let discountLabel = UILabel()
         let discountText = !reward.discount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -2004,7 +2009,7 @@ private class ActiveCardView: UIView {
         discountLabel.textColor = .darkText
         discountLabel.textAlignment = .center
         discountLabel.numberOfLines = 2
-        discountLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        discountLabel.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         offerBox.addArrangedSubview(discountLabel)
 
         let cashbackText = !reward.cashback.isEmpty ? "\(reward.cashback) Cashback" : ""
@@ -2015,11 +2020,12 @@ private class ActiveCardView: UIView {
             cashbackLabel.textColor = .darkGray
             cashbackLabel.textAlignment = .center
             cashbackLabel.numberOfLines = 1
-            cashbackLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+            cashbackLabel.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
             offerBox.addArrangedSubview(cashbackLabel)
         }
 
-        offerBox.heightAnchor.constraint(greaterThanOrEqualToConstant: 88).isActive = true
+        offerBox.heightAnchor.constraint(greaterThanOrEqualToConstant: 84).isActive = true
+        offerBox.setContentCompressionResistancePriority(.required, for: .vertical)
         container.addArrangedSubview(offerBox)
 
 
