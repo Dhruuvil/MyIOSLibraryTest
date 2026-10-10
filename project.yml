@@ -1,0 +1,19 @@
+name: MobyRewards
+
+options:
+  deploymentTarget:
+    iOS: "13.0"
+
+targets:
+  MobyRewards:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/MobyRewards
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mobycashback.MobyRewards
+        DEFINES_MODULE: YES
+        GENERATE_INFOPLIST_FILE: YES
+        BUILD_LIBRARY_FOR_DISTRIBUTION: YES
+        SKIP_INSTALL: NO

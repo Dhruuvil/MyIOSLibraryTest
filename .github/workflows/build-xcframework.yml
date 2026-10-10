@@ -6,33 +6,77 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: Build iOS Swift Package
+    name: Build and Package XCFramework
     runs-on: macos-15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check Xcode
-        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
-      - name: Resolve package
-        run: swift package resolve
+      - name: Generate Xcode project
+        run: xcodegen generate
 
-      - name: Build for iOS Simulator
+      - name: Archive iOS Device
         run: |
-          xcodebuild \
+          xcodebuild archive \
+            -project MobyRewards.xcodeproj \
             -scheme MobyRewards \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build/DerivedData \
-            build
+            -destination "generic/platform=iOS" \
+            -archivePath "$PWD/build/MobyRewards-iOS.xcarchive" \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
-      - name: Build for iOS Device
+      - name: Archive iOS Simulator
         run: |
-          xcodebuild \
+          xcodebuild archive \
+            -project MobyRewards.xcodeproj \
             -scheme MobyRewards \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build/DerivedData \
-            build
+            -destination "generic/platform=iOS Simulator" \
+            -archivePath "$PWD/build/MobyRewards-Simulator.xcarchive" \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+      - name: Create XCFramework
+        run: |
+          DEVICE="$PWD/build/MobyRewards-iOS.xcarchive/Products/Library/Frameworks/MobyRewards.framework"
+          SIMULATOR="$PWD/build/MobyRewards-Simulator.xcarchive/Products/Library/Frameworks/MobyRewards.framework"
+
+          echo "Searching for framework products..."
+          find "$PWD/build" -name "MobyRewards.framework" -type d
+
+          test -d "$DEVICE" || {
+            echo "ERROR: Device framework not found."
+            exit 1
+          }
+
+          test -d "$SIMULATOR" || {
+            echo "ERROR: Simulator framework not found."
+            exit 1
+          }
+
+          xcodebuild -create-xcframework \
+            -framework "$DEVICE" \
+            -framework "$SIMULATOR" \
+            -output "$PWD/MobyRewards.xcframework"
+
+      - name: Zip XCFramework
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            MobyRewards.xcframework MobyRewards.xcframework.zip
+
+          swift package compute-checksum MobyRewards.xcframework.zip
+
+      - name: Upload XCFramework artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MobyRewards-XCFramework
+          path: MobyRewards.xcframework.zip
+          if-no-files-found: error
