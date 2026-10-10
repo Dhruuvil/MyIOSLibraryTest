@@ -810,6 +810,8 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
     public func setActiveOffers(response: [String: Any]) {
 
+        // Preserve rewards scratched in this session if the API has not returned them yet.
+        let locallyScratchedRewards = activeRewards.filter { $0.scratched }
         activeRewards.removeAll()
 
 
@@ -907,6 +909,13 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
         }
 
 
+
+        // Merge locally scratched rewards that the API has not returned yet.
+        for reward in locallyScratchedRewards {
+            if !activeRewards.contains(where: { $0.adId == reward.adId }) {
+                activeRewards.append(reward)
+            }
+        }
 
         collectionView.reloadData()
 
@@ -1271,6 +1280,7 @@ public class MobyRewardsView: UIView, UICollectionViewDelegate, UICollectionView
 
             scratchView?.isHidden = true
             self.collectionView.reloadData()
+            self.refreshDots()
             self.applyTabsStyle()
 
         }
@@ -2056,13 +2066,13 @@ private class ActiveCardView: UIView {
 
 
 
-            let copyButton = UIButton(type: .custom)
+            let copyButton = UIButton(type: .system)
 
             copyButton.translatesAutoresizingMaskIntoConstraints = false
 
-            copyButton.setTitle("📋", for: .normal)
-
-            copyButton.titleLabel?.font = theme.font(ofSize: 18)
+            copyButton.setImage(UIImage(systemName: "doc.on.doc"), for: .normal)
+            copyButton.tintColor = theme.secondaryColor
+            copyButton.accessibilityLabel = "Copy coupon code"
 
             couponBox.addSubview(copyButton)
 
@@ -2120,7 +2130,9 @@ private class ActiveCardView: UIView {
         expiryStack.spacing = 5
         expiryStack.distribution = .fill
 
-        let calLabel = UIImageView(image: UIImage(systemName: "calendar"))
+        let calendarImage = UIImage(systemName: "calendar") ?? UIImage(systemName: "calendar.circle")
+        let calLabel = UIImageView(image: calendarImage)
+        calLabel.isHidden = calendarImage == nil
         calLabel.tintColor = theme.secondaryColor
         calLabel.contentMode = .scaleAspectFit
         calLabel.translatesAutoresizingMaskIntoConstraints = false
